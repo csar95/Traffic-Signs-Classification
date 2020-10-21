@@ -18,19 +18,24 @@ labels_df = pd.read_csv(labels_path)
 class_names = labels_df["Name"].to_numpy()
 # print(class_names)
 
-train_ds = preprocessing.image_dataset_from_directory(images_path,
-                                                    color_mode="grayscale",
-                                                    image_size=(img_height, img_width),
-                                                    seed=seed,
-                                                    validation_split=0.2,
-                                                    subset="training")
+# 34799 files --> 1088 batches
+signs_ds = preprocessing.image_dataset_from_directory(images_path,
+                                                      color_mode="grayscale",
+                                                      image_size=(img_height, img_width),
+                                                      seed=seed)
 
-val_ds = preprocessing.image_dataset_from_directory(images_path,
-                                                    color_mode="grayscale",
-                                                    image_size=(img_height, img_width),
-                                                    seed=seed,
-                                                    validation_split=0.2,
-                                                    subset="validation")
+# val_ds = preprocessing.image_dataset_from_directory(images_path,
+#                                                     color_mode="grayscale",
+#                                                     image_size=(img_height, img_width),
+#                                                     seed=seed,
+#                                                     validation_split=0.2,
+#                                                     subset="validation")
+
+signs_ds = signs_ds.shuffle(999999)
+train_ds = signs_ds.take(int(1088 * 0.7))
+test_ds = signs_ds.skip(int(1088 * 0.7))
+val_ds = test_ds.skip(int(1088 * 0.15))
+test_ds = test_ds.take(int(1088 * 0.15))
 
 #################### VISUALIZE DATA
 
@@ -91,7 +96,7 @@ plt.savefig("./Resources/Output_data/data_augmentation_ex.png")
 model = models.Sequential([
     data_augmentation,  # Transforms the input images according to the functions inside this layer. It's a form of regularization
     normalization_layer,  # Normalizes the image so that the pixel values are in range [0, 1]
-    layers.Conv2D(filters=16, kernel_size=3, padding="same", activation="relu"),
+    layers.Conv2D(filters=16, kernel_size=3, padding="same", activation="relu"),  # same --> zero-padding | valid --> no-padding
     layers.MaxPooling2D(),
     layers.Conv2D(filters=32, kernel_size=3, padding="same", activation="relu"),
     layers.MaxPooling2D(),
@@ -107,8 +112,15 @@ model.compile(optimizer='adam',
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),  # Generally used in multi-class classification problems
               metrics=['accuracy'])
 
-epochs = 10
+print("TRAINING MODEL")
+
+epochs = 5
 history = model.fit(train_ds, validation_data=val_ds, epochs=epochs)
+
+test_loss, test_acc = model.evaluate(test_ds)
+
+print('Test Loss:', test_loss)
+print('Test Accuracy:', test_acc)
 
 model.save("trained_model")
 
@@ -137,25 +149,28 @@ plt.title('Training and Validation Loss')
 
 plt.savefig("./Resources/Output_data/training_results.png")
 
-#################### PREDICT ON NEW DATA
+#################### PREDICT ON NEW/UNSEEN DATA
 
 loaded_model = models.load_model("trained_model")
 loaded_model.summary()
 
-img = preprocessing.image.load_img("./Resources/Test-examples/stop_ex.jpeg", color_mode="grayscale", target_size=(img_height, img_width))
-img_arr = preprocessing.image.img_to_array(img)
+# img = preprocessing.image.load_img("./Resources/Test-examples/stop_ex.jpeg", color_mode="grayscale", target_size=(img_height, img_width))
+# img_arr = preprocessing.image.img_to_array(img)
+#
+# plt.imshow(img_arr.reshape((32,32)), cmap="gray")
+# plt.savefig("./Resources/Test-examples/stop_ex_preprocessed.png")
+#
+# img_arr = np.array([img_arr])  # Convert single image to a batch. ALTERNATIVE --> tf.expand_dims(img, 0)
+# img_arr = img_arr * (1./255)  # Normalize
+#
+# predictions = model.predict(img_arr)
+# score = tf.nn.softmax(predictions[0])
+#
+# print(score)
+#
+# print(f"This image most likely belongs to {class_names[np.argmax(score)]} with a {100 * np.max(score)} percent confidence.")
 
-plt.imshow(img_arr.reshape((32,32)), cmap="gray")
-plt.savefig("./Resources/Test-examples/stop_ex_preprocessed.png")
+test_loss, test_acc = loaded_model.evaluate(test_ds)
 
-img_arr = np.array([img_arr])  # Convert single image to a batch. ALTERNATIVE --> tf.expand_dims(img, 0)
-img_arr = img_arr * (1./255)  # Normalize
-
-predictions = loaded_model.predict(img_arr)
-score = tf.nn.softmax(predictions[0])
-
-print(score)
-
-print(f"This image most likely belongs to {class_names[np.argmax(score)]} with a {100 * np.max(score)} percent confidence.")
-
-# TODO: TRY TO GENERATE TEST DATA SO WE CAN EVALUATE THE MODEL
+print('Test Loss:', test_loss)
+print('Test Accuracy:', test_acc)
