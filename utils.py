@@ -1,12 +1,15 @@
 from tensorflow.keras import models, layers, losses
 
 
+#################### PARAMETERS
 IMAGES_PATH = "./Resources/Traffic-signs"
 LABELS_PATH = "./Resources/labels.csv"
-IMG_HEIGHT, IMG_WEIGHT = 32, 32
+IMG_HEIGHT, IMG_WIDTH = 32, 32
 SEED = 42
 NUM_EPOCHS = 10
+PROB_THRESHOLD = 0.25
 
+#################### PRINT COLORS
 RED = "\x1b[31m"
 GREEN = "\x1b[32m"
 YELLOW = "\x1b[33m"
@@ -33,7 +36,7 @@ This technique generates additional training data from the existing examples by 
 that yield believable-looking images. This helps expose the model to more aspects of the data and generalize better.
 '''
 data_augmentation = models.Sequential([
-    layers.experimental.preprocessing.RandomFlip("horizontal", input_shape=(IMG_HEIGHT, IMG_WEIGHT, 1)),
+    layers.experimental.preprocessing.RandomFlip("horizontal", input_shape=(IMG_HEIGHT, IMG_WIDTH, 1)),
     layers.experimental.preprocessing.RandomRotation(0.1),
     layers.experimental.preprocessing.RandomZoom(0.1),
 ])

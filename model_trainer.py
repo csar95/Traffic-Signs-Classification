@@ -10,19 +10,21 @@ from utils import *
 
 labels_df = pd.read_csv(LABELS_PATH)
 
-class_names = labels_df["Name"].to_numpy()
-# print(class_names)
+class_names_ori = labels_df["Name"].to_numpy()
+# print(class_names_ori)
 
 # 34799 files --> 1088 batches
 signs_ds = preprocessing.image_dataset_from_directory(IMAGES_PATH,
                                                       color_mode="grayscale",
-                                                      image_size=(IMG_HEIGHT, IMG_WEIGHT),
+                                                      image_size=(IMG_HEIGHT, IMG_WIDTH),
                                                       seed=SEED)
+class_names_ds = signs_ds.class_names
+# print(class_names_ds)
 
-# val_ds = preprocessing.image_dataset_from_directory(images_path,
+# val_ds = preprocessing.image_dataset_from_directory(IMAGES_PATH,
 #                                                     color_mode="grayscale",
-#                                                     image_size=(img_height, img_width),
-#                                                     seed=seed,
+#                                                     image_size=(IMG_HEIGHT, IMG_WIDTH),
+#                                                     seed=SEED,
 #                                                     validation_split=0.2,
 #                                                     subset="validation")
 
@@ -39,7 +41,7 @@ for signs, labels in train_ds.take(1):
     for i in range(len(signs)):
         ax = plt.subplot(6, 6, i + 1)
         plt.imshow(tf.squeeze(signs[i].numpy().astype("uint8")), cmap="gray")
-        plt.title(class_names[labels[i]], fontsize=5)
+        plt.title(class_names_ori[ int(class_names_ds[labels[i]]) ], fontsize=5)
         plt.axis("off")
 
 plt.savefig("./Trainer_Output/training_examples.png")
@@ -70,7 +72,7 @@ plt.savefig("./Trainer_Output/data_augmentation_ex.png")
 
 #################### CREATE, TRAIN and SAVE THE MODEL
 
-model = create_model(class_names)
+model = create_model(class_names_ori)
 
 print_clr("-------------------- TRAINING MODEL --------------------", MAGENTA)
 history = model.fit(train_ds, validation_data=val_ds, epochs=NUM_EPOCHS)
