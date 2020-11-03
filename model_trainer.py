@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
@@ -84,6 +85,22 @@ print_clr(f"Test Accuracy: {test_acc}", GREEN)
 
 print_clr("--------------------- SAVING MODEL ---------------------", MAGENTA)
 model.save_weights("./Checkpoints/weights")
+
+#################### CONFUSION MATRIX
+
+x, y_target = [], []
+for batch in test_ds:
+    for idx, sign in enumerate(batch[0]):
+        x.append(np.array(sign))
+        y_target.append(np.array(batch[1][idx]))
+
+y_pred = model.predict(np.array(x))
+
+confusion_matrix = tf.math.confusion_matrix(labels=np.array(y_target),
+                                            predictions=np.argmax(y_pred, axis=1),
+                                            num_classes=class_names_ori.size)
+
+tf.print(confusion_matrix, output_stream="file://./Trainer_Output/Confusion_matrix", summarize=-1)
 
 #################### VISUALIZE TRAINING RESULTS
 

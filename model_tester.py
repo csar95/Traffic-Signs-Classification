@@ -30,6 +30,7 @@ val_ds = test_ds.skip(int(1088 * 0.15))
 test_ds = test_ds.take(int(1088 * 0.15))
 
 #################### LOAD TRAINED MODEL
+
 print_clr("-------------------- LOADING MODEL ---------------------", MAGENTA)
 model = create_model(class_names_ori)
 model.load_weights("./Checkpoints/weights")
@@ -41,6 +42,7 @@ print_clr(f"Test Loss: {test_loss}", GREEN)
 print_clr(f"Test Accuracy: {test_acc}", GREEN)
 
 #################### READ WEB-CAM
+
 # cam = cv2.VideoCapture(0)  # 0 --> Default web-cam
 # cam.set(propId=3, value=640)  # 3 --> Width
 # cam.set(propId=4, value=480)  # 4 --> Height
